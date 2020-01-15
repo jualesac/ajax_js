@@ -28,7 +28,6 @@ var AJAX = {
 
 
         this.header = HEADERS;
-        this.prueba;
 
 
         this.use = function (ruta) {
