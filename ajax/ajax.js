@@ -111,12 +111,12 @@ var AJAX = {
         };
 
 
-        this.html = function (callback, url) {
+        this.text = function (callback, content, url) {
             let parametros;
 
             parametros = {
                 method: "GET",
-                Content: "HTML/TEXT"
+                Content: content
             };
 
             fetch (url, parametros).then (function (res) {
