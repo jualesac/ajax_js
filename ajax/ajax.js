@@ -12,179 +12,172 @@
 */
 
 var AJAX = {
-    AJAX: function (staticURL) {
-        staticURL = (staticURL === "STATIC_URL" ? true : false) || false;
+    main: function (URLStatic) {
+        URLStatic = (URLStatic == undefined) ? true : (URLStatic || false);
+        
+        let route = "";
+        let routeDef = "";
+        let headers = new Headers;
+        let errors = function (err) { throw { type: "error", message: "Ocurrió un problema con la petición al servidor" }; };
+        let middle = function (res, status) {};
 
-        //let RUTA = location.href.replace (/\#/, "").trim () + `php/index.php`;
-        let RUTA = `../php/index.php`;
-        let RUTA_DEFAULT = "";
-        let HEADERS = new Headers ();
-        let errorCatch;
+        this.header = headers;
+        this.route = function (rte) {
+            if (typeof (rte) !== "string") { throw new TypeError ("Se esperaba un string"); }
 
-        errorCatch = function () {
-            console.log ({ type: "error", message: "Ocurrió un problema con la petición al servidor." });
+            route = rte.replace (/\#|\/$/, "").trim ();
         };
 
+        this.use = function (rte) {
+            if (typeof (rte) !== "string") { throw new TypeError ("Se esperaba un string"); }
 
-
-        this.header = HEADERS;
-
-
-        this.use = function (ruta) {
-            RUTA = ruta.replace (/\#|\/$/, "").trim ();
+            routeDef = rte.replace (/\#|\/$/, "").trim ();
         };
 
+        this.setErrors = function (callback) {
+            if (!(callback instanceof Function)) { throw new TypeError ("Se esperaba una función como argumento"); }
+            
+            errors = callback;
+        };
+        
+        this.setMiddleware = function (callback) {
+            if (!(callback instanceof Function)) { throw new TypeError ("Se esperaba una función como argumento"); }
+            
+            middle = callback;
+        };
 
-        this.useDefault = function (ruta) {
-            RUTA_DEFAULT = ruta.replace (/\#|\/$/, "").trim ();
-        }
-
-
-        this.catch = function (callback) {
-            callback = callback || function (err) { console.log ({ type: "error", message: "Ocurrió un problema con la petición al servidor." }); };
-
-            errorCatch = callback;
-        }
-
-
-        this.get = function (callback, valores, url) {
-            if (typeof (valores) === "string") {
-                url = valores;
-                valores = undefined;
+        this.get = function (callback, values, url, boolMiddle) {
+            if (typeof (values) === "string") {
+                url = values;
+                values = {};
             }
 
-            callback = callback || function (datos) { return datos; };
-            valores = valores || {};
+            values = values || {};
+            boolMiddle = (boolMiddle == undefined) ? true : boolMiddle;
 
-            let stringValores = JSONStringURL (valores);
-            let parametros = {
-                method: "GET",
-                headers: HEADERS
-            };
+            let strVal = JSONStringURL (values);
 
-            if (stringValores !== "") {
-                url = url + `?${stringValores}`;
+            if (strVal !== "") {
+                url = url + `?${strVal}`;
             }
 
-            peticion (url, parametros, callback);
+            send (true, true, "GET", {}, url, undefined, callback, boolMiddle);
         };
 
+        this.post = function (callback, values, url, boolMiddle) {
+            boolMiddle = (boolMiddle == undefined) ? true : boolMiddle;
 
-        this.post = function (callback, valores, url) {
-            send ("POST", url, valores, callback);
+            send (true, true, "POST", undefined, url, values, callback, boolMiddle);
         };
 
+        this.put = function (callback, values, url, boolMiddle) {
+            boolMiddle = (boolMiddle == undefined) ? true : boolMiddle;
 
-        this.put = function (callback, valores, url) {
-            send ("PUT", url, valores, callback);
+            send (true, true, "PUT", undefined, url, values, callback, boolMiddle);
         };
 
+        this.delete = function (callback, values, url, boolMiddle) {
+            boolMiddle = (boolMiddle == undefined) ? true : boolMiddle;
 
-        this.delete = function (callback, valores, url) {
-            send ("DELETE", url, valores, callback);
+            send (true, true, "DELETE", undefined, url, values, callback, boolMiddle);
         };
 
+        this.form = function (callback, form, url, boolMiddle) {
+            boolMiddle = (boolMiddle == undefined) ? true : boolMiddle;
 
-        this.form = function (callback, idOFormData, url) {
-            callback = callback || function (datos) { return datos; };
-
-            let formulario;
-            let parametros;
             let content;
+            let params = {};
 
-            formulario = (idOFormData instanceof FormData) ? idOFormData : new FormData (document.getElementById (idOFormData));
-            content = HEADERS.get ("Content-Type");
+            params.body = (form instanceof FormData) ? form : new FormData (document.getElementById (form));
+            content = headers.get ("Content-Type");
 
-            HEADERS.delete ("Content-Type");
+            headers.delete ("Content-Type");
 
-            parametros = {
-                method: "POST",
-                body: formulario,
-                headers: HEADERS
+            send (true, true, "POST", params, url, undefined, callback, boolMiddle);
+
+            if (content != "") { headers.append ("Content-Type", content); }
+        };
+
+        this.text = function (callback, url, content) {
+            let params = {};
+            let _route = route;
+            let _routeDef = routeDef;
+
+            params.headers = {
+                "Content-Type": content || "TEXT/PLAIN"
             };
 
-            peticion (url, parametros, callback);
+            route = "";
+            routeDef = "";
 
-            if (content != "") {
-                HEADERS.append ("Content-Type", content);
+            send (false, false, "GET", params, url, undefined, callback, false);
+
+            route = _route;
+            routeDef = _routeDef;
+        };
+
+        function send (json, header, method, params, url, values, callback, boolMiddle) {
+            params = params || {
+                body: JSONStringURL (values)
+            };
+
+            params.method = method;
+
+            if (header) {
+                params.headers = headers;
             }
-        };
 
-
-        this.text = function (callback, content, url) {
-            let parametros;
-
-            parametros = {
-                method: "GET",
-                Content: content
-            };
-
-            fetch (url, parametros).then (function (res) {
-                if (res.ok) {
-                    return res.text ();
-                }
-            }).then (function (page) {
-                callback (page);
-            }).catch (function (err) {
-                if (!(err instanceof Error)) {
-                    errorCatch (err);
-                } else {
-                    console.log ({ type: "error", message: err });
-                }
-             });
-        };
-
-
-        function send (metodo, url, valores, callback) {
-            callback = callback || function (datos) { return datos; };
-            valores = valores || {};
-
-            let parametros = {
-                method: metodo,
-                body: JSONStringURL (valores),
-                headers: HEADERS
-            };
-
-            peticion (url, parametros, callback);
+            request (url, params, callback, json, boolMiddle);
         }
 
+        function request (url, params, callback, json, boolMiddle) {
+            if (typeof (url) != "string") { throw new TypeError ("Se esperaba un string como argumento"); }
+            if (typeof (params) != "object") { throw new TypeError ("Se esperaba un objeto como argumento"); }
+            if (typeof (callback) != "function") { throw new TypeError ("Se esperaba una función como argumento"); }
+            if (typeof (json) != "boolean") { throw new TypeError ("Se esperaba un booleano como argumento"); }
 
-        function peticion (url, parametros, callback) {
-            url = ((staticURL ? (RUTA + RUTA_DEFAULT + (url || "")) : RUTA_DEFAULT + url) || RUTA + RUTA_DEFAULT);
+            let uri = (URLStatic ? (route + routeDef + (url || "")) : routeDef + url) || route + routeDef;
 
             let status;
 
-            fetch (url, parametros).then (function (res) {
+            fetch (uri, params).then (function (res) {
                 if (res.ok) {
                     status = res.status;
 
                     if (res.status != 204 && res.status != 205) {
-                        return res.json ();
+                        if (json) {
+                            return res.json ();
+                        } else {
+                            return res.text ();
+                        }
                     }
 
+                    if (boolMiddle) { middle (res, status); }
                     callback (res, status);
                 } else {
                     throw res;
                 }
-            }).then (function (datos) {
-                if (datos == undefined) { return; };
+                
+                return;
+            }).then (function (res) {
+                if (res == undefined) { return; }
 
-                callback (datos, status);
+                if (boolMiddle) { middle (res, status); }
+                callback (res, status);
             }).catch (function (err) {
                 if (!(err instanceof Error)) {
-                    errorCatch (err);
+                    errors (err);
                 } else {
-                    console.log (url, { type: "error", message: err });
+                    throw { url: uri, type: "error", message: err };
                 }
-             });
+            });
         }
 
-
-        function JSONStringURL (valores) {
+        function JSONStringURL (values) {
             let val = [];
 
-            for (let v in valores) {
-                val.push (`${v}=${encodeURIComponent (valores[v])}`);
+            for (let v in values) {
+                val.push (`${v}=${encodeURIComponent (values[v])}`);
             }
 
             return val.join ("&");
