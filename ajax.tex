@@ -1,0 +1,226 @@
+%
+% FECHA: 2020-11-12
+% AUTOR: Julio Alejandro Santos Corona
+% CORREO: jualesac@yahoo.com
+% TÍTULO: ajax.tex
+%
+% Descripción: Documentación de la clase AJAX.
+%
+\documentclass[10pt]{article}
+\usepackage[spanish]{babel}
+\usepackage[utf8]{inputenc}
+\usepackage{listings}
+\usepackage{anysize}
+\usepackage{colortbl}
+\title{AJAX v.1.2}
+\author{Julio Alejandro Santos Corona}
+\date{12 de noviembre de 2020}
+
+\marginsize{2.5cm}{2.5cm}{0cm}{1.5cm}
+
+\definecolor{comment}{rgb}{0.5, 0.5, 0.5}
+\definecolor{background}{rgb}{0.21, 0.24, 0.25}
+
+\begin{document}
+\lstdefinelanguage{JavaScript}{
+	morekeywords={
+		new,
+		function,
+		var,
+		let,
+		get,
+		post,
+		put,
+		delete,
+		route,
+		use
+	},
+	sensitive=false,
+	morecomment=[l][\color{comment}]{//},
+	morecomment=[s]{/*}{*/}
+}
+
+\lstset{breaklines=true, tabsize=4, language=JavaScript}
+\lstset{basicstyle=\small ,numbers=left, numberstyle=\small, stepnumber=1, numbersep=-12pt, backgroundcolor=\color{white}, frame=leftline}
+
+\maketitle
+
+La clase es una simplificación para realizar peticiones ajax, para ello utiliza la api web fetch de javascript.
+
+\section{Instancia}
+
+Para crear una instancia basta con crear un objeto a través del constructor de la función AJAX.main; a este se le puede pasar un booleano (default: true) que definirá el comportamiento de las rutas configuradas:
+\\
+\begin{lstlisting}
+	var ajax = new AJAX.main; five
+	ajax.route (``localhost:9001/index.js"); //Entrada al backend
+\end{lstlisting}
+
+\section{Peticiones}
+La clase cuenta con métodos para realizar peticiones de forma fácil y con una estructura similar.
+
+\subsection{GET, POST, PUT, DELETE}
+
+Los verbos más utilizados en un api rest y la estructura de uso es similar para todos los casos, haciendo una distinción en el método get que el argumento de valores es opcional y dichos valores son transmitidos en la URL.
+\\\\
+\begin{tabular}{|m{1.8cm}|m{1.5cm}|m{1.5cm}|m{9.4cm}|}
+	\hline
+	\rowcolor{black}\textcolor{white}{Argumento} & \textcolor{white}{Tipo} & \textcolor{white}{Opcional} & \textcolor{white}{Descripción} \\
+	\hline
+	callback & function & No & Función a ejecutar luego de la resolución de la petición, recibe dos argumentos, res y status. Res contiene los datos en formato json y status el estado http de respuesta. \\
+	\hline
+	body & object & No & Objeto js que contiene los valores que serán pasados a través del body; en caso del método get este argumento es opcional y los valores son transmitidos en la URL. \\
+	\hline
+	url & string & No & Ruta a la que se hará la petición, el comportamiento está dado por el modo en que se creó la instancia. \\
+	\hline
+	middle & boolean & Si & Permite o niega la ejecución de un middleware. (Default: true) \\
+	\hline
+\end{tabular}
+\\\\\\
+Ejemplo: 
+\begin{lstlisting}
+	//Peticiones get con y sin valores
+	ajax.get (function (res, status) {
+		//codigo
+	}, { var1: valor1 }, "/APP1");
+	
+	ajax.get (function (res, status) {
+		//codigo
+	}, "/APP1");
+	
+	ajax.post (function (res, status) {
+		//codigo
+	}, { var1: valor1 }, "/APP");
+	
+	ajax.put (function (res, status) {
+		//codigo
+	}, {}, "/APP");
+	
+	ajax.delete (function (res, status) {
+		//codigo
+	}, {}, "/APP", false);
+\end{lstlisting}
+
+\subsection{FORM y TEXT}
+
+La clase cuenta con dos métodos extra que tienen la finalidad de realizar peticiones especiales.
+\\\\
+El método \textbf{form} se puede utilizar cuando se cuente con una vista en la que exista una estructura html form, la petición se enviará siempre a través de POST y el body serán los objetos input, textarea, etc. contenidos en el.
+\\\\
+\begin{tabular}{|m{1.8cm}|m{2cm}|m{1.5cm}|m{9cm}|}
+	\hline
+	\rowcolor{black}\textcolor{white}{Argumento} & \textcolor{white}{Tipo} & \textcolor{white}{Opcional} & \textcolor{white}{Descripción} \\
+	\hline
+	callback & function & No & Función a ejecutar luego de la resolución de la petición, recibe dos argumentos, res y status. \\
+	\hline
+	form & object$/$string & No & El argumento puede recibir un objeto FormData o el id de la etiqueta form. \\
+	\hline
+	url & string & No & Ruta a la que se hará la petición. \\
+	\hline
+	middle & boolean & Si & Permite o niega la ejecución de un middleware. (Default: true) \\
+	\hline
+\end{tabular}
+\\\\
+\noindent
+\footnotesize{HTML} \normalsize{}
+\lstset{language=HTML}
+\begin{lstlisting}
+	<form id="formulary">
+		<input type="text" name="name">
+		<input type="number" name="age">
+	</form>
+\end{lstlisting}
+
+\noindent
+\footnotesize{JS} \normalsize{}
+\lstset{language=JavaScript}
+\begin{lstlisting}
+	var ajax = new AJAX.main;
+	ajax.route ("localhost:9001/index.js");
+	
+	let form = new FormData (document.getElementById ("formulary"));
+	
+	ajax.form (function (res, status) {
+		//codigo
+	}, form, "/FORMULARIO");
+	
+	//El metodo tambien permite pasar solo el id del formulario
+	ajax.form (function (res, status) {
+		//codigo
+	}, "formulary", "/FORMULARIO");
+\end{lstlisting}
+\noindent
+El método \textbf{text} se utilizará para obtener el contenido de un archivo, para éste método no se ejecuta middleware, su definición es la siguiente:
+\\\\
+\begin{tabular}{|m{1.8cm}|m{2cm}|m{1.5cm}|m{9cm}|}
+	\hline
+	\rowcolor{black}\textcolor{white}{Argumento} & \textcolor{white}{Tipo} & \textcolor{white}{Opcional} & \textcolor{white}{Descripción} \\
+	\hline
+	callback & function & No & Función a ejecutar luego de la resolución de la petición, recibe dos argumentos, res y status. \\
+	\hline
+	url & string & No & Ruta al archivo. \\
+	\hline
+	content & string & Si & Header Content-Type, por default TEXT/PLAIN \\
+	\hline
+\end{tabular}
+\\\\\\
+Ejemplo:
+
+\begin{lstlisting}
+	ajax.text (function (text, status) {
+		//codigo
+	}, "/VIEWS/view.html", "TEXT/HTML");
+\end{lstlisting}
+
+\newpage
+
+\section{Manejo de rutas}
+
+El comportamiento de las rutas se define durante el constructor, por default URLStatic tiene un valor true.
+\\\\
+Las rutas se configuran a través del método \textbf{route} y \textbf{use}. La recomendación es configurar a través de \textbf{route} la ubicación del punto de entrada al backend y posteriormente definir la entrada de app con use.
+\\\\
+Cuando URLStatic es true la ruta se forma con \textbf{route} + \textbf{use} + \textbf{url} de lo contrario será \textbf{use} + \textbf{url}.
+\\\\
+Ejemplo:
+\begin{lstlisting}
+	var ajax = new AJAX.main;
+	
+	ajax.route ("localhost:9001"); //Configuracion del punto de entrada a backend
+	ajax.use ("/APP"); //Configuracion del punto de entrada de app
+	
+	//Peticion POST a ruta localhost:9001/APP/CONFIG?idUser=193
+	ajax.post (function (res, status) {
+		//codigo
+	}, { mail: "user@server.com" }, "/CONFIG?idUser=193");
+\end{lstlisting}
+
+\section{Otros}
+
+\subsection{Manejador de errores}
+
+La clase por default cuenta con un manejo de errores estándar que puede ser sustituído y adaptado a las necesidades del aplicativo en caso de existir un problema con la petición.
+\\
+\begin{lstlisting}
+	ajax.setErrors (function (err) {
+		if (err.status = 404) {
+			console.log ({ type: "Error", error: "err" });
+		}
+	});
+\end{lstlisting}
+
+\subsection{Middleware}
+
+Durante las peticiones es posible configurar un middleware que se ejecutará antes de la función resolutora, dicho middleware recibe como argumentos la propia respuesta de la petición y el estatus de la misma.
+\\
+\begin{lstlisting}
+	ajax.setMiddleware (function (res, status) {
+		//codigo
+	});
+\end{lstlisting}
+
+\subsection{Headers}
+
+Es posible, en caso de requerirlo, configurar las cabeceras que se incluirán en las peticiones a través del objeto \textbf{Headers} y del que se tiene acceso directo en ajax.\textbf{header}.
+
+\end{document}
