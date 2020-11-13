@@ -8,7 +8,10 @@
  * Descripción: Librería que simplifica el uso de una petición AJAX.
  *
  * Reedición: 2019/03/12
- * Versión: 1.2. La versión anterior utilizaba el objeto XMLHttpRequest.
+ * Versión: 1.1. La versión anterior utilizaba el objeto XMLHttpRequest.
+ *
+ * Upgrade: 2020/11/02
+ * Versión: 1.2. Mejora de rendimiento y adición de middleware.
 */
 
 var AJAX = {
